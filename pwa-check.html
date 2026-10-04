@@ -1,0 +1,27 @@
+<!doctype html><html lang=ar dir=rtl><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>فحص التثبيت</title><link rel=manifest href=manifest.json>
+<style>body{font:15px/1.7 Tahoma,sans-serif;margin:0;padding:14px;background:#f2f9ee;color:#1d3123}h2{margin:0 0 8px;color:#25863f}.r{background:#fff;border:1px solid #d6e8ce;border-radius:10px;padding:8px 12px;margin:6px 0;word-break:break-all;direction:rtl}.ok{color:#1e7a35;font-weight:700}.no{color:#c0392b;font-weight:700}button{font:inherit;font-weight:700;padding:10px 18px;border:0;border-radius:10px;background:#25863f;color:#fff;margin:6px 4px 6px 0}</style></head><body>
+<h2>🔎 فحص تثبيت التطبيق</h2><div id=o></div><button id=ins style="display:none">جرّب التثبيت دلوقتي</button><button id=cp>📋 انسخ التقرير</button>
+<script>
+const L=[],o=document.getElementById('o'),ins=document.getElementById('ins'),cp=document.getElementById('cp');let dp;
+const add=(ok,t)=>{L.push((ok?'OK ':'ERR ')+t);const d=document.createElement('div');d.className='r';d.innerHTML='<span class='+(ok?'ok':'no')+'>'+(ok?'✔':'✘')+'</span> ';d.append(t);o.append(d)};
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;add(true,'المتصفح شايف التطبيق قابل للتثبيت (beforeinstallprompt وصل)');ins.style.display=''});
+ins.onclick=async()=>{dp.prompt();const r=await dp.userChoice;add(r.outcome=='accepted','نتيجة التثبيت: '+r.outcome)};
+cp.onclick=()=>navigator.clipboard.writeText(L.join('\n')).then(()=>cp.textContent='✔ اتنسخ');
+(async()=>{
+ add(true,'الرابط: '+location.href);add(isSecureContext,'اتصال آمن HTTPS: '+isSecureContext);add(true,'المتصفح: '+navigator.userAgent);
+ add(true,'وضع العرض: '+(matchMedia('(display-mode: standalone)').matches?'standalone (مثبّت)':'متصفح عادي'));
+ try{const mr=await fetch('manifest.json',{cache:'no-store'});add(mr.ok,'manifest.json ← '+mr.status+' '+mr.headers.get('content-type'));
+  const m=await mr.json(),base=new URL('manifest.json',location.href);
+  add(true,'name='+m.name+' | start_url='+m.start_url+' | scope='+m.scope+' | display='+m.display);
+  const su=new URL(m.start_url,base).href,sc=new URL(m.scope,base).href;add(su.startsWith(sc),'start_url داخل الـ scope: '+su);
+  try{const sr=await fetch(su,{cache:'no-store'});add(sr.ok&&!sr.redirected,'start_url ← '+sr.status+(sr.redirected?' (فيه تحويل!)':''))}catch(e){add(false,'start_url فشل: '+e)}
+  for(const ic of m.icons){const u=new URL(ic.src,base).href;try{const r=await fetch(u,{cache:'no-store'}),b=await r.blob(),bm=await createImageBitmap(b),d=bm.width+'x'+bm.height;add(r.ok&&d==ic.sizes&&b.type=='image/png',ic.src+' ('+ic.purpose+') ← '+r.status+' '+b.type+' '+Math.round(b.size/1024)+'KB فعلي '+d+' معلن '+ic.sizes)}catch(e){add(false,ic.src+' ← فشل التحميل أو مش صورة صالحة')}}
+ }catch(e){add(false,'manifest: '+e)}
+ if('serviceWorker' in navigator){const rg=await navigator.serviceWorker.getRegistration();add(!!rg,'Service Worker: '+(rg?'scope '+rg.scope+' | active='+!!rg.active+' | installing='+!!rg.installing:'مش متسجل'));
+  try{const r=await fetch('service-worker.js',{cache:'no-store'}),t=await r.text();add(r.ok,'service-worker.js ← '+r.status+' ('+((t.match(/chicks-v\d+/)||['؟'])[0])+')')}catch(e){add(false,'service-worker.js فشل')}
+  const ks=await caches.keys();add(ks.length>0,'الكاش: '+(ks.join(' ، ')||'فاضي'));
+  for(const k of ks){const c=await caches.open(k);add(true,k+': '+(await c.keys()).map(r=>r.url.split('/').pop()||'/').join(' ، '))}
+ }else add(false,'المتصفح مش بيدعم Service Worker');
+ add(true,'لو رسالة "قابل للتثبيت" ما ظهرتش خلال ثواني، يبقى المتصفح شايف التطبيق مش قابل للتثبيت (أو مثبّت بالفعل).');
+})();
+</script></body></html>
