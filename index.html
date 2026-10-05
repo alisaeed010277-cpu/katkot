@@ -39,6 +39,7 @@ table{width:100%;border-collapse:collapse;background:#fff;font-size:15px}td,th{b
 #it input,#it select{margin:0;min-width:70px}#it select{min-width:140px}#it td{padding:6px}.sgl{display:flex;justify-content:space-around;margin-top:46px}.sgl span{border-top:1px solid #888;padding-top:6px;min-width:150px;text-align:center;color:var(--mut)}
 select.bs{width:auto;margin:0 0 0 8px;margin-inline-start:auto;font-weight:700;padding:8px 12px;border-radius:12px;background:#fff;border:2px solid var(--o);max-width:220px}.bs+.dt{margin-inline-start:12px}.lgb input{margin:0}
 .hb img.ai{background:none;padding:0;border-radius:12px;height:50px;width:50px}
+.chip{display:inline-block;background:var(--ol);border-radius:20px;padding:4px 12px;margin:3px}
 @keyframes pp{from{transform:scale(.85);opacity:0}to{opacity:1}}.tst{animation:none}
 @media(max-width:700px){.hb{padding:10px 14px}.hb h1{font-size:19px}.dt{display:none}nav{padding:4px 8px}nav a{flex-direction:column;gap:0;padding:6px 10px;font-size:12px}nav a i{font-size:22px}main{padding:12px}.k,.q{gap:8px}.k{grid-template-columns:1fr 1fr}.k b{font-size:20px}.q{grid-template-columns:repeat(4,1fr)}.q button{font-size:13px;padding:12px 2px}.q span{font-size:26px}.lst{grid-template-columns:1fr}.fg{grid-template-columns:1fr}.fw{grid-column:auto}.md{align-items:flex-end;padding:0}.bx{border-radius:18px 18px 0 0;max-width:none}table{font-size:13px}td,th{padding:6px}}
 @media print{header,nav,button,.np,#pp,#ts,.sg{display:none!important}body{padding:0;background:#fff}body.pdoc main{display:none}.ph{display:flex!important}.md{position:static;background:none;display:block;padding:0}.bx{max-height:none;overflow:visible;max-width:none;box-shadow:none;border-radius:0;padding:0;animation:none}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}.k>div{box-shadow:none}}
@@ -55,7 +56,8 @@ const ask=(m,fn,o={})=>pop(m,{...o,fn,ic:o.danger?'🗑️':'❓',t:'تأكيد'
 const toast=m=>{const t=document.createElement('div');t.className='tst';t.textContent=m;$('#ts').append(t);setTimeout(()=>t.remove(),1800)};
 const closeO=()=>{$('#o').innerHTML='';document.body.classList.remove('pdoc')};
 addEventListener('keydown',e=>{if(e.key=='Escape'){if($('#pp').innerHTML)$('#pp').innerHTML='';else closeO()}});
-function mig(){D.cn=D.cn||{};if(!D.br||!D.br.length){D.br=[{id:'m',name:'الرئيسي',cash0:+D.cash0||0}];delete D.cash0}D.types.forEach(t=>{if(!t.obs)t.obs=t.ob?{m:+t.ob}:{};delete t.ob});D.parties.forEach(p=>p.br=p.br||'m');D.tx.forEach(x=>x.br=x.br||x.from||'m');D.tx.forEach(x=>{if((x.k=='sale'||x.k=='buy')&&!x.items){x.items=x.t?[{t:x.t,q:x.q,p:x.p}]:[];delete x.t;delete x.q;delete x.p}});['sale','buy'].forEach(k=>{let m=D.tx.reduce((a,x)=>x.k==k?Math.max(a,+x.no||0):a,D.cn[k]||0);D.tx.filter(x=>x.k==k&&!x.no).sort((a,b)=>a.d+a.id>b.d+b.id?1:-1).forEach(x=>x.no=++m);D.cn[k]=m})}
+const EC0=['علف','كهرباء','مرتبات'];
+function mig(){D.ec=D.ec||EC0.slice();D.tx.forEach(x=>{if(x.k=='exp'&&!x.cat){x.cat=(x.nt||'').trim()||'أخرى';x.nt='';if(!D.ec.includes(x.cat))D.ec.push(x.cat)}});D.cn=D.cn||{};if(!D.br||!D.br.length){D.br=[{id:'m',name:'الرئيسي',cash0:+D.cash0||0}];delete D.cash0}D.types.forEach(t=>{if(!t.obs)t.obs=t.ob?{m:+t.ob}:{};delete t.ob});D.parties.forEach(p=>p.br=p.br||'m');D.tx.forEach(x=>x.br=x.br||x.from||'m');D.tx.forEach(x=>{if((x.k=='sale'||x.k=='buy')&&!x.items){x.items=x.t?[{t:x.t,q:x.q,p:x.p}]:[];delete x.t;delete x.q;delete x.p}});['sale','buy'].forEach(k=>{let m=D.tx.reduce((a,x)=>x.k==k?Math.max(a,+x.no||0):a,D.cn[k]||0);D.tx.filter(x=>x.k==k&&!x.no).sort((a,b)=>a.d+a.id>b.d+b.id?1:-1).forEach(x=>x.no=++m);D.cn[k]=m})}
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,5);
 const today=()=>{let t=new Date();return new Date(t-t.getTimezoneOffset()*6e4).toISOString().slice(0,10)};
 const n=x=>Math.round((+x||0)*100)/100,fm=x=>n(x).toLocaleString('en-US');
@@ -103,9 +105,17 @@ function addTx(k){
  if(k=='dead')form('تسجيل نافق',[d,['t','النوع','s',ty],['q','عدد النافق','number',0,''],['nt','السبب (اختياري)','text',0,'']],v=>{
    if(!(+v.q>0))return alert('اكتب العدد'),false;const s=calc().st[v.t];if(+v.q>(s?s.q:0))return alert('المتاح في المخزون '+(s?s.q:0)+' بس'),false;
    D.tx.push({id:uid(),k,d:v.d,t:v.t,q:+v.q,nt:v.nt,br:BR});save();go()});
- else if(k=='exp')form('تسجيل مصروف',[d,['nt','البند (علف، كهرباء، عمالة...)','text',0,''],['a','المبلغ','number',0,'']],v=>{
-   if(!v.nt||!(+v.a>0))return alert('اكتب البند والمبلغ'),false;D.tx.push({id:uid(),k,d:v.d,nt:v.nt,a:+v.a,br:BR});save();go()});
+ else if(k=='exp')expF();
 }
+function expF(){const NEW='__new';
+ form('تسجيل مصروف',[['d','التاريخ','date',0,today()],['cat','البند','s',D.ec.map(c=>[c,c]).concat([[NEW,'➕ بند جديد...']])],['newcat','اسم البند الجديد','text',0,''],['a','المبلغ','number',0,''],['nt','ملاحظة (اختياري)','text',0,'']],v=>{
+  let c=v.cat;if(c==NEW){c=v.newcat.trim();if(!c)return alert('اكتب اسم البند الجديد'),false;if(!D.ec.includes(c))D.ec.push(c)}
+  if(!(+v.a>0))return alert('اكتب المبلغ'),false;
+  D.tx.push({id:uid(),k:'exp',d:v.d,cat:c,nt:v.nt,a:+v.a,br:BR});save();go()},(f,v)=>{if(f=='cat')$('#f_newcat').parentNode.style.display=v.cat==NEW?'':'none'});
+ $('#f_newcat').parentNode.style.display='none'}
+function expSum(){const m=today().slice(0,7),E={};TXB().forEach(x=>{if(x.k=='exp'&&x.d.startsWith(m)){const c=x.cat||'غير مصنّف';E[c]=(E[c]||0)+x.a}});const ks=Object.keys(E);return`<div class=c style="display:block;margin-bottom:10px"><b>💸 مصروفات الشهر ده حسب البند</b><div style="margin-top:6px">${ks.length?ks.map(k=>`<span class=chip>${esc(k)}: <b>${fm(E[k])}</b></span>`).join(''):'<small>لسه مفيش</small>'}</div></div>`}
+function catMgr(){$('#o').innerHTML=`<div class=md><div class=bx><h3>💸 بنود المصروفات</h3><small>البنود الأساسية ثابتة. أي بند جديد بتضيفه من شاشة المصروفات بيتحفظ هنا. البند اللي عليه مصروفات مينفعش يتحذف.</small>`+D.ec.map((c,i)=>`<div class=lgb><b style="flex:1">${esc(c)}</b>${EC0.includes(c)?'<small>أساسي</small>':`<button class=x onclick="catDel(${i})">🗑</button>`}</div>`).join('')+`<button class=g id=cn>إغلاق</button></div></div>`;$('#cn').onclick=closeO}
+function catDel(i){const c=D.ec[i];if(D.tx.some(x=>x.k=='exp'&&x.cat==c))return alert('البند ده عليه مصروفات، مينفعش يتحذف');D.ec.splice(i,1);save();catMgr()}
 function settle(k,id){
  if(!canW())return;
  form(k=='col'?'تحصيل من عميل':'سداد لمورد',[['d','التاريخ','date',0,today()],['a','المبلغ','number',0,'']],v=>{
@@ -118,12 +128,12 @@ function desc(x){
  if(x.k=='xfer')return`${items(x).map(i=>esc(T(i.t).name)+' × '+fm(i.q)).join('، ')}<br><small>من ${esc(BN(x.from))} ← إلى ${esc(BN(x.to))}</small>`;
  if(x.k=='sale'||x.k=='buy'){const z=tot(x);return`${items(x).map(i=>esc(T(i.t).name)+' × '+fm(i.q)).join('، ')} = <b>${fm(z)}</b><br><small>${esc(P(x.pt).name)} · مدفوع ${fm(x.paid)}${x.paid<z?' · باقي '+fm(z-x.paid):''}</small>`}
  if(x.k=='dead')return`${esc(T(x.t).name)} × ${x.q} <small>${esc(x.nt||'')}</small>`;
- if(x.k=='exp')return`${esc(x.nt)} = <b>${fm(x.a)}</b>`;
+ if(x.k=='exp')return`<b>${esc(x.cat||x.nt||'غير مصنّف')}</b>${x.nt&&x.cat?' — '+esc(x.nt):''} = <b>${fm(x.a)}</b>`;
  return`${esc(P(x.pt).name)} = <b>${fm(x.a)}</b> <small>(${KS[x.k]})</small>`;
 }
 function list(k){
  const xs=TXB().filter(x=>x.k==k).sort((a,b)=>b.d+b.id>a.d+a.id?1:-1),iv=k=='sale'||k=='buy',ro=BR=='all';
- return(ro?'':`<div class=bar><button class=o onclick="${k=='xfer'?'xferF()':`addTx('${k}')`}">+ تسجيل ${KS[k]}</button></div>`)+`<div class=lst>`+(xs.map(x=>`<div class=c><div><small>${esc(x.d)}${x.no?' · فاتورة '+x.no:''}${ro&&MB()&&k!='xfer'?' · '+esc(BN(bx(x))):''}</small><br>${desc(x)}</div><div>${iv&&!ro?`<button class=g title="تعديل" onclick="invF('${k}','${x.id}')">✏️</button>`:''}${iv?`<button class=g title="طباعة / PDF" onclick="inv('${x.id}')">🖨</button>`:''}${k=='xfer'?`<button class=g title="طباعة" onclick="xinv('${x.id}')">🖨</button>`:''}${ro?'':`<button class=x onclick="del('${x.id}')">🗑</button>`}</div></div>`).join('')||'<div class=e>مفيش عمليات لسه</div>')+'</div>';
+ return(ro?'':`<div class=bar><button class=o onclick="${k=='xfer'?'xferF()':`addTx('${k}')`}">+ تسجيل ${KS[k]}</button></div>`)+(k=='exp'?expSum():'')+`<div class=lst>`+(xs.map(x=>`<div class=c><div><small>${esc(x.d)}${x.no?' · فاتورة '+x.no:''}${ro&&MB()&&k!='xfer'?' · '+esc(BN(bx(x))):''}</small><br>${desc(x)}</div><div>${iv&&!ro?`<button class=g title="تعديل" onclick="invF('${k}','${x.id}')">✏️</button>`:''}${iv?`<button class=g title="طباعة / PDF" onclick="inv('${x.id}')">🖨</button>`:''}${k=='xfer'?`<button class=g title="طباعة" onclick="xinv('${x.id}')">🖨</button>`:''}${ro?'':`<button class=x onclick="del('${x.id}')">🗑</button>`}</div></div>`).join('')||'<div class=e>مفيش عمليات لسه</div>')+'</div>';
 }
 function home(){
  const c=calc(),td=today();let q=0,v=0,rc=0,rp=0,sa=0,cg=0,ex=0;Object.values(c.st).forEach(s=>{q+=s.q;v+=s.v});
@@ -137,6 +147,7 @@ function sets(){const o=D.co||{},a=D.ax||{on:1,h:22},w=lic(),adm=BR=='m'||BR=='a
  return`<h3>⚙️ الإعدادات</h3><div class=lst>`+
  sc(o.logo?`<img src="${esc(o.logo)}">`:'🏢','بيانات الشركة: '+esc(o.name||'لسه متسجلتش'),esc([o.tel,o.tel2,o.addr].filter(Boolean).join(' · ')||'اللوجو والاسم والتليفونات بتظهر في فواتير وكشوفات الحساب PDF'),`<button class=g onclick="coF()">تعديل</button>`)+
  (adm?sc('🏬','الفروع: '+D.br.length,esc(D.br.map(b=>b.name).join(' · ')),`<button class=g onclick="brMgr()">إدارة الفروع</button>`):'')+
+ sc('💸','بنود المصروفات: '+D.ec.length,esc(D.ec.join(' · ')),`<button class=g onclick="catMgr()">إدارة</button>`)+
  sc('💼','رصيد الخزنة أول المدة: '+fm(bs.reduce((x,b)=>x+(+b.cash0||0),0)),MB()?esc(bs.map(b=>b.name+': '+fm(b.cash0)).join(' · ')):'',`<button class=g onclick="cash0()">تعديل</button>`)+
  (adm?sc('🗓️','تصدير تلقائي يومي: '+(a.on?'الساعة '+a.h+':00':'متوقف'),'آخر تصدير: '+(D.lx||'لسه'),`<button class=g onclick="axF()">تعديل</button>`)+
  sc('💾','النسخ الاحتياطي',MB()?'ملف واحد فيه بيانات كل الفروع مع بعض. احتفظ بيه في مكان آمن.':'البيانات محفوظة على الجهاز ده بس. احتفظ بالملفات في مكان آمن (واتساب لنفسك أو درايف).',`<button onclick="bk()">${MB()?'🔄 تصدير كل الفروع':'⬇ تصدير'}</button><button class=g onclick="$('#imp').click()">⬆ استرجاع</button><input id=imp type=file accept=".json" hidden onchange="rs(this)">`)+
@@ -235,19 +246,19 @@ function stmt(id){
  doc(`${ph(1)}<h2 class=dh>كشف حساب: ${esc(p.name)}</h2><table><tr><th>التاريخ</th><th>البيان</th><th>الحركة</th><th>الرصيد</th></tr>${rows}</table><div class=tt><div>${p.kind=='c'?'المستحق على العميل':'المستحق للمورد'}<b>${fm(b)}</b></div></div>`);
 }
 function rep(){
- const c=calc(),R={};let ex=0;
+ const c=calc(),R={},EC={};let ex=0;
  TXB().forEach(x=>{if(x.d<RF.f||x.d>RF.t)return;const Rr=t=>R[t]=R[t]||{sq:0,rev:0,cg:0,dq:0,dl:0};
-  if(x.k=='exp')ex+=x.a;
+  if(x.k=='exp'){ex+=x.a;const k=x.cat||'غير مصنّف';EC[k]=(EC[k]||0)+x.a}
   if(x.k=='sale')items(x).forEach((i,j)=>{const r=Rr(i.t);r.sq+=i.q;r.rev+=n(i.q*i.p);r.cg+=(c.mi[x.id]||[])[j]||0});
   if(x.k=='dead'){const r=Rr(x.t);r.dq+=x.q;r.dl+=c.m[x.id]||0}});
  let g=0;const ids=Object.keys(R);
  const rows=ids.map(i=>{const r=R[i],pf=r.rev-r.cg-r.dl;g+=pf;return`<tr><td>${esc(T(i).name)}</td><td>${fm(r.sq)}</td><td>${fm(r.rev)}</td><td>${fm(r.cg)}</td><td>${fm(r.dq)}</td><td>${fm(r.dl)}</td><td class="${pf<0?'neg':'pos'}"><b>${fm(pf)}</b></td></tr>`}).join('');
- const net=g-ex;
+ const net=g-ex,ek=Object.keys(EC).sort((a,b)=>EC[b]-EC[a]),ecT=ek.length?`<h3>💸 المصروفات حسب البند</h3><div class=tw><table><tr><th>البند</th><th>المبلغ</th><th>النسبة</th></tr>${ek.map(k=>`<tr><td>${esc(k)}</td><td><b>${fm(EC[k])}</b></td><td>${ex?Math.round(EC[k]/ex*100):0}%</td></tr>`).join('')}<tr><td><b>الإجمالي</b></td><td><b>${fm(ex)}</b></td><td></td></tr></table></div>`:'';
  const bt=BR=='all'&&MB()?`<h3>🏬 أداء الفروع</h3><div class=tw><table><tr><th>الفرع</th><th>المبيعات</th><th>تكلفة المباع</th><th>خسارة النافق</th><th>المصروفات</th><th>الصافي</th></tr>${D.br.map(b=>{let rv=0,cg=0,dl=0,e2=0;D.tx.forEach(x=>{if(x.d<RF.f||x.d>RF.t||bx(x)!=b.id)return;if(x.k=='sale'){rv+=tot(x);cg+=c.m[x.id]||0}if(x.k=='dead')dl+=c.m[x.id]||0;if(x.k=='exp')e2+=x.a});const nt=rv-cg-dl-e2;return`<tr><td><b>${esc(b.name)}</b></td><td>${fm(rv)}</td><td>${fm(cg)}</td><td>${fm(dl)}</td><td>${fm(e2)}</td><td class="${nt<0?'neg':'pos'}"><b>${fm(nt)}</b></td></tr>`}).join('')}</table></div>`:'';
  return ph()+(MB()?`<h3>📍 ${BR=='all'?'كل الفروع (تجميعي)':esc(BN(BR))}</h3>`:'')+`<div class=np><label>من</label><input type=date value="${RF.f}" onchange="RF.f=this.value;go()"><label>إلى</label><input type=date value="${RF.t}" onchange="RF.t=this.value;go()"></div>
  <h3>ربحية الأصناف</h3>${ids.length?`<div style="overflow-x:auto"><table><tr><th>النوع</th><th>المباع</th><th>المبيعات</th><th>تكلفة المباع</th><th>النافق</th><th>خسارة النافق</th><th>الربح</th></tr>${rows}</table></div>`:'<div class=e>مفيش حركة في الفترة دي</div>'}
  <div class=k style="margin-top:10px"><div><small>ربح الأصناف (بعد النافق)</small><b>${fm(g)}</b></div><div><small>المصروفات</small><b>${fm(ex)}</b></div><div class=big><small>صافي الربح للفترة</small><b class="${net<0?'neg':''}">${fm(net)}</b></div></div>
- ${bt}<button class=np onclick="print()">🖨 طباعة</button>`;
+ ${ecT}${bt}<button class=np onclick="print()">🖨 طباعة</button>`;
 }
 function go(){const o=D.co||{};fixBR();if(V=='xfer'&&!MB())V='home';
  $('#hd').innerHTML=(/^data:image\//.test(o.logo||'')?`<img src="${esc(o.logo)}">`:'<img class=ai src="icon-192.png" alt="">')+`<div><h1>إدارة الكتاكيت</h1>${o.name?`<small>${esc(o.name)}</small>`:''}</div>${MB()?`<select class=bs onchange="setBR(this.value)"><option value=all${BR=='all'?' selected':''}>🏬 كل الفروع (تجميعي)</option>${D.br.map(b=>`<option value="${b.id}"${BR==b.id?' selected':''}>${esc(b.name)}</option>`).join('')}</select>`:''}<span class=dt>${new Date().toLocaleDateString('ar-EG-u-nu-latn',{weekday:'long',day:'numeric',month:'long'})}</span>`;
