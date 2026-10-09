@@ -63,10 +63,10 @@ const today=()=>{let t=new Date();return new Date(t-t.getTimezoneOffset()*6e4).t
 const n=x=>Math.round((+x||0)*100)/100,fm=x=>n(x).toLocaleString('en-US');
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const T=i=>D.types.find(t=>t.id==i)||{name:'؟'},P=i=>i?(D.parties.find(p=>p.id==i)||{name:'؟'}):{name:'نقدي'};
-const items=x=>x.items||[],tot=x=>n(items(x).reduce((a,i)=>a+i.q*i.p,0)),KS={xfer:'تحويل',sale:'بيع',buy:'شراء',dead:'نافق',exp:'مصروف',col:'تحصيل',pay:'سداد'};
+const items=x=>x.items||[],tot=x=>n(items(x).reduce((a,i)=>a+i.q*i.p,0)),KS={xfer:'تحويل',cxfer:'تحويل نقدية',sale:'بيع',buy:'شراء',dead:'نافق',exp:'مصروف',col:'تحصيل',pay:'سداد'};
 const tabs=[['home','🏠','الرئيسية'],['stk','🐥','المخزون'],['sale','💰','بيع'],['buy','🛒','شراء'],['xfer','🔀','تحويلات'],['dead','☠️','نافق'],['exp','💸','مصروفات'],['ppl','👥','عملاء وموردين'],['rep','📊','تقارير'],['set','⚙️','الإعدادات']];
 mig();
-let BR='m';const MB=()=>D.br.length>1,BN=i=>(D.br.find(b=>b.id==i)||{name:'؟'}).name,bx=x=>x.br||'m',fixBR=()=>{BR=D.br.length==1?D.br[0].id:(D.cur=='all'||D.br.some(b=>b.id==D.cur)?D.cur:D.br[0].id)},inBr=x=>BR=='all'||bx(x)==BR||(x.k=='xfer'&&(x.from==BR||x.to==BR)),PB=()=>D.parties.filter(p=>BR=='all'||p.br==BR),TXB=()=>D.tx.filter(inBr),canW=()=>BR!='all'||(alert('اختار فرع محدد من القايمة فوق علشان تسجل عمليات'),false),setBR=v=>{BR=v;D.cur=v;save();go()};fixBR();
+let BR='m';const MB=()=>D.br.length>1,BN=i=>(D.br.find(b=>b.id==i)||{name:'؟'}).name,bx=x=>x.br||'m',fixBR=()=>{BR=D.br.length==1?D.br[0].id:(D.cur=='all'||D.br.some(b=>b.id==D.cur)?D.cur:D.br[0].id)},inBr=x=>BR=='all'||bx(x)==BR||((x.k=='xfer'||x.k=='cxfer')&&(x.from==BR||x.to==BR)),PB=()=>D.parties.filter(p=>BR=='all'||p.br==BR),TXB=()=>D.tx.filter(inBr),canW=()=>BR!='all'||(alert('اختار فرع محدد من القايمة فوق علشان تسجل عمليات'),false),setBR=v=>{BR=v;D.cur=v;save();go()};fixBR();
 let V='home',RF={f:today().slice(0,8)+'01',t:today()};
 
 // المحرك: إعادة حساب كل شيء بالترتيب الزمني بمتوسط التكلفة المرجح
@@ -80,6 +80,7 @@ function engine(){
   else if(x.k=='sale'){const cs=items(x).map(i=>{const s=S(b,i.t),c=i.q*av(s);s.q-=i.q;s.v-=c;fin(s);return c});mi[x.id]=cs;m[x.id]=cs.reduce((a,c)=>a+c,0);C.cash+=x.paid;if(x.pt)bal[x.pt]+=tot(x)-x.paid}
   else if(x.k=='dead'){const s=S(b,x.t),c=x.q*av(s);m[x.id]=c;s.q-=x.q;s.v-=c;fin(s)}
   else if(x.k=='xfer'){if(!B[x.from]||!B[x.to])return;const cs=items(x).map(i=>{const s=S(x.from,i.t),c=i.q*av(s);s.q-=i.q;s.v-=c;fin(s);const d=S(x.to,i.t);d.q+=i.q;d.v+=c;d.l=i.q?c/i.q:d.l;fin(d);return c});mi[x.id]=cs;m[x.id]=cs.reduce((a,c)=>a+c,0)}
+  else if(x.k=='cxfer'){if(!B[x.from]||!B[x.to])return;const a=+x.a||0;B[x.from].cash-=a;B[x.to].cash+=a}
   else if(x.k=='exp')C.cash-=x.a;
   else if(x.k=='col'){C.cash+=x.a;bal[x.pt]-=x.a}
   else if(x.k=='pay'){C.cash-=x.a;bal[x.pt]-=x.a}
@@ -125,6 +126,7 @@ const neg=()=>Object.values(engine().B).some(b=>Object.values(b.st).some(q=>q.q<
 function del(id){ask('تأكيد حذف العملية دي؟',()=>{const old=D.tx,fin=()=>{save();go();toast('تم الحذف')};D.tx=old.filter(x=>x.id!=id);
  if(neg()){D.tx=old;ask('الحذف ده هيخلي مخزون نوع ما بالسالب. تكمل؟',()=>{D.tx=old.filter(x=>x.id!=id);fin()},{danger:1,ok:'حذف رغم كده'})}else fin()},{danger:1,ok:'حذف'})}
 function desc(x){
+ if(x.k=='cxfer')return`💸 تحويل نقدية = <b>${fm(x.a)}</b><br><small>من خزنة ${esc(BN(x.from))} ← إلى خزنة ${esc(BN(x.to))}${x.nt?' · '+esc(x.nt):''}</small>`;
  if(x.k=='xfer')return`${items(x).map(i=>esc(T(i.t).name)+' × '+fm(i.q)).join('، ')}<br><small>من ${esc(BN(x.from))} ← إلى ${esc(BN(x.to))}</small>`;
  if(x.k=='sale'||x.k=='buy'){const z=tot(x);return`${items(x).map(i=>esc(T(i.t).name)+' × '+fm(i.q)).join('، ')} = <b>${fm(z)}</b><br><small>${esc(P(x.pt).name)} · مدفوع ${fm(x.paid)}${x.paid<z?' · باقي '+fm(z-x.paid):''}</small>`}
  if(x.k=='dead')return`${esc(T(x.t).name)} × ${x.q} <small>${esc(x.nt||'')}</small>`;
@@ -132,8 +134,8 @@ function desc(x){
  return`${esc(P(x.pt).name)} = <b>${fm(x.a)}</b> <small>(${KS[x.k]})</small>`;
 }
 function list(k){
- const xs=TXB().filter(x=>x.k==k).sort((a,b)=>b.d+b.id>a.d+a.id?1:-1),iv=k=='sale'||k=='buy',ro=BR=='all';
- return(ro?'':`<div class=bar><button class=o onclick="${k=='xfer'?'xferF()':`addTx('${k}')`}">+ تسجيل ${KS[k]}</button></div>`)+(k=='exp'?expSum():'')+`<div class=lst>`+(xs.map(x=>`<div class=c><div><small>${esc(x.d)}${x.no?' · فاتورة '+x.no:''}${ro&&MB()&&k!='xfer'?' · '+esc(BN(bx(x))):''}</small><br>${desc(x)}</div><div>${iv&&!ro?`<button class=g title="تعديل" onclick="invF('${k}','${x.id}')">✏️</button>`:''}${iv?`<button class=g title="طباعة / PDF" onclick="inv('${x.id}')">🖨</button>`:''}${k=='xfer'?`<button class=g title="طباعة" onclick="xinv('${x.id}')">🖨</button>`:''}${ro?'':`<button class=x onclick="del('${x.id}')">🗑</button>`}</div></div>`).join('')||'<div class=e>مفيش عمليات لسه</div>')+'</div>';
+ const xs=TXB().filter(x=>x.k==k||(k=='xfer'&&x.k=='cxfer')).sort((a,b)=>b.d+b.id>a.d+a.id?1:-1),iv=k=='sale'||k=='buy',ro=BR=='all';
+ return(ro?'':`<div class=bar>${k=='xfer'?'<button class=o onclick="xferF()">+ تحويل مخزون</button><button class=o onclick="cxF()">💸 + تحويل نقدية</button>':`<button class=o onclick="addTx('${k}')">+ تسجيل ${KS[k]}</button>`}</div>`)+(k=='exp'?expSum():'')+(k=='xfer'?cxSum():'')+`<div class=lst>`+(xs.map(x=>`<div class=c><div><small>${esc(x.d)}${x.no?' · فاتورة '+x.no:''}${ro&&MB()&&k!='xfer'?' · '+esc(BN(bx(x))):''}</small><br>${desc(x)}</div><div>${iv&&!ro?`<button class=g title="تعديل" onclick="invF('${k}','${x.id}')">✏️</button>`:''}${iv?`<button class=g title="طباعة / PDF" onclick="inv('${x.id}')">🖨</button>`:''}${x.k=='xfer'?`<button class=g title="طباعة" onclick="xinv('${x.id}')">🖨</button>`:x.k=='cxfer'?`<button class=g title="طباعة" onclick="cinv('${x.id}')">🖨</button>`:''}${ro?'':`<button class=x onclick="del('${x.id}')">🗑</button>`}</div></div>`).join('')||'<div class=e>مفيش عمليات لسه</div>')+'</div>';
 }
 function home(){
  const c=calc(),td=today();let q=0,v=0,rc=0,rp=0,sa=0,cg=0,ex=0;Object.values(c.st).forEach(s=>{q+=s.q;v+=s.v});
@@ -141,7 +143,7 @@ function home(){
  TXB().forEach(x=>{if(x.d!=td)return;if(x.k=='sale'){sa+=tot(x);cg+=c.m[x.id]||0}if(x.k=='dead')cg+=c.m[x.id]||0;if(x.k=='exp')ex+=x.a});
  const w=lic(),a=D.ax||{on:1,h:22},co=D.co||{},nt=sa-cg-ex;
  const allT=BR=='all'&&MB()?brT(td):'';return(w&&w!='P'?`<div class=tb>⏳ نسخة تجريبية: باقي ${w.slice(1)} يوم</div>`:'')+`${BR=='all'?'':'<div class=q>'}${BR=='all'?'':[['sale','💰','بيع'],['buy','🛒','شراء'],['dead','☠️','نافق'],['exp','💸','مصروف']].map(([k,i,l])=>`<button onclick="addTx('${k}')"><span>${i}</span>${l}</button>`).join('')}${BR=='all'?'':'</div>'}
- <div class=k><div class=big><small>💼 رصيد الخزنة</small><b class="${c.cash<0?'neg':''}">${fm(c.cash)}</b></div><div><small>مبيعات النهارده</small><b>${fm(sa)}</b></div><div><small>صافي ربح النهارده</small><b class="${nt<0?'neg':'pos'}">${fm(nt)}</b></div><div><small>🐥 في المخزون</small><b>${fm(q)}</b></div><div><small>قيمة المخزون</small><b>${fm(v)}</b></div><div><small>لنا عند العملاء</small><b>${fm(rc)}</b></div><div><small>علينا للموردين</small><b>${fm(rp)}</b></div></div>`+allT+(BR=='all'?'<div class=tb style="margin-top:14px">👁️ ده عرض تجميعي لكل الفروع (قراءة فقط). اختار فرع من القايمة فوق علشان تسجل عمليات.</div>':'');
+ <div class=k><div class=big><small>💼 رصيد الخزنة</small><b class="${c.cash<0?'neg':''}">${fm(c.cash)}</b>${BR!='all'&&MB()?'<br><button class=g style="margin:8px 0 0" onclick="cxF()">🔄 تحويل نقدية بين الخزن</button>':''}</div><div><small>مبيعات النهارده</small><b>${fm(sa)}</b></div><div><small>صافي ربح النهارده</small><b class="${nt<0?'neg':'pos'}">${fm(nt)}</b></div><div><small>🐥 في المخزون</small><b>${fm(q)}</b></div><div><small>قيمة المخزون</small><b>${fm(v)}</b></div><div><small>لنا عند العملاء</small><b>${fm(rc)}</b></div><div><small>علينا للموردين</small><b>${fm(rp)}</b></div></div>`+allT+(BR=='all'?'<div class=tb style="margin-top:14px">👁️ ده عرض تجميعي لكل الفروع (قراءة فقط). اختار فرع من القايمة فوق علشان تسجل عمليات.</div>':'');
 }
 function sets(){const o=D.co||{},a=D.ax||{on:1,h:22},w=lic(),adm=BR=='m'||BR=='all',bs=BR=='all'?D.br:D.br.filter(b=>b.id==BR),sc=(i,t,u,b)=>`<div class=c><span class=si>${i}</span><div class=sx><b>${t}</b><br><small>${u}</small></div><div>${b}</div></div>`;
  return`<h3>⚙️ الإعدادات</h3><div class=lst>`+
@@ -200,6 +202,17 @@ function xSave(){rd();const its=[];for(const r of IR){if(r.q==='')continue;const
  const sv=D.tx;D.tx=[...sv,{id:uid(),k:'xfer',d,from:BR,to,br:BR,items:its}];const e=engine(),bad=[...new Set(its.map(i=>i.t))].find(t=>e.B[BR].st[t]&&e.B[BR].st[t].q<0);
  if(bad){D.tx=sv;const dm=its.filter(i=>i.t==bad).reduce((a,i)=>a+i.q,0);return alert(`المتاح من «${T(bad).name}» في ${BN(BR)} ${fm(Math.max(0,e.B[BR].st[bad].q+dm))} بس`)}
  save();closeO();go();toast('تم التحويل ✓')}
+function cxSum(){const e=engine();return`<div class=c style="display:block;margin-bottom:10px"><b>💼 رصيد الخزن الحالي</b><div style="margin-top:6px">${D.br.map(b=>`<span class=chip>${esc(b.name)}: <b class="${e.B[b.id].cash<0?'neg':''}">${fm(e.B[b.id].cash)}</b></span>`).join('')}</div></div>`}
+function cxF(){if(!canW())return;
+ const oth=D.br.filter(b=>b.id!=BR);if(!oth.length)return alert('محتاج فرعين على الأقل');
+ const av=engine().B[BR].cash;
+ form('💸 تحويل نقدية من خزنة «'+esc(BN(BR))+'»',[['d','التاريخ','date',0,today()],['to','إلى خزنة','s',oth.map(b=>[b.id,b.name]),(BR!='m'&&oth.some(b=>b.id=='m'))?'m':oth[0].id],['a','المبلغ (رصيد خزنة '+esc(BN(BR))+' الحالي: '+fm(av)+')','number',0,''],['nt','ملاحظة (اختياري)','text',0,'']],v=>{
+  const a=n(+v.a);if(!(a>0))return alert('اكتب المبلغ'),false;if(!v.d)return alert('اختار التاريخ'),false;
+  const sv=()=>{D.tx.push({id:uid(),k:'cxfer',d:v.d,from:BR,to:v.to,br:BR,a,nt:v.nt});save();go()};
+  if(a>av){ask('المبلغ أكبر من رصيد خزنة «'+BN(BR)+'» الحالي ('+fm(av)+').\nتكمل التحويل؟',()=>{sv();closeO();toast('تم التحويل ✓')},{ok:'تكمل'});return false}
+  sv()})}
+function cinv(id){const x=D.tx.find(t=>t.id==id);if(!x)return;
+ doc(`${ph(1)}<h2 class=dh>إذن تحويل نقدية</h2><div class=dm><span>التاريخ: <b>${esc(x.d)}</b></span><span>من خزنة: <b>${esc(BN(x.from))}</b></span><span>إلى خزنة: <b>${esc(BN(x.to))}</b></span></div><table><tr><th>البيان</th><th>المبلغ</th></tr><tr><td>${esc(x.nt||'تحويل نقدية بين الخزن')}</td><td><b>${fm(x.a)}</b></td></tr></table><div class=sgl><span>توقيع المُسلِّم</span><span>توقيع المستلم</span></div>`)}
 function xinv(id){const x=D.tx.find(t=>t.id==id);if(!x)return;
  doc(`${ph(1)}<h2 class=dh>إذن تحويل مخزون</h2><div class=dm><span>التاريخ: <b>${esc(x.d)}</b></span><span>من: <b>${esc(BN(x.from))}</b></span><span>إلى: <b>${esc(BN(x.to))}</b></span></div><table><tr><th>م</th><th>البيان</th><th>العدد</th></tr>${items(x).map((i,j)=>`<tr><td>${j+1}</td><td>${esc(T(i.t).name)}</td><td>${fm(i.q)}</td></tr>`).join('')}</table><div class=sgl><span>توقيع المُسلِّم</span><span>توقيع المستلم</span></div>`)}
 function brT(td){const e=engine();return`<h3>🏬 ملخص الفروع</h3><div class=tw><table><tr><th>الفرع</th><th>الخزنة</th><th>🐥 المخزون</th><th>قيمة المخزون</th><th>مبيعات النهارده</th></tr>`+D.br.map(b=>{const B=e.B[b.id];let q=0,v=0;Object.values(B.st).forEach(s=>{q+=s.q;v+=s.v});const sa=D.tx.filter(x=>x.k=='sale'&&bx(x)==b.id&&x.d==td).reduce((a,x)=>a+tot(x),0);return`<tr><td><b>${esc(b.name)}</b></td><td>${fm(B.cash)}</td><td>${fm(q)}</td><td>${fm(v)}</td><td>${fm(sa)}</td></tr>`}).join('')+'</table></div>'}
